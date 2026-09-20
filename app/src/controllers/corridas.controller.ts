@@ -13,6 +13,14 @@ export class CorridasController {
           status: "aguardando_motorista",
           motorista_id: null
         })
+        .project({
+          passageiro_id: 1,
+          origem: 1,
+          destino: 1,
+          distancia_estimada_km: 1,
+          valor_estimado: 1,
+          data_solicitacao: 1
+        })
         .sort({ data_solicitacao: 1 })
         .toArray();
 

@@ -110,6 +110,8 @@ O campo `corrida_id` terá índice único para que uma corrida tenha no máximo 
 | Avaliação e corrida | Referencing | A avaliação fica em uma coleção separada e aponta para a corrida avaliada. |
 | Avaliação e motorista | Referencing | Permite encontrar facilmente as avaliações recebidas por um motorista. |
 
+As corridas não ficam armazenadas dentro do passageiro ou do motorista porque essa lista pode crescer continuamente. Usando referências, evitamos que esses documentos aumentem sem controle e se aproximem do limite de 16 MB do MongoDB. Já origem, destino, veículo e histórico de status possuem tamanho pequeno e controlado, por isso podem ficar embutidos.
+
 ---
 
 ## 4. Relacionamentos e Cardinalidade
@@ -122,6 +124,9 @@ O campo `corrida_id` terá índice único para que uma corrida tenha no máximo 
 | Corrida | Avaliação | 1:0..1 |
 | Passageiro | Avaliação | 1:N |
 | Motorista | Avaliação | 1:N |
+| Passageiro | Motorista | N:N (por meio de Corridas) |
+
+A relação entre passageiros e motoristas é N:N ao longo do sistema: um passageiro pode realizar corridas com diferentes motoristas e um motorista pode atender diferentes passageiros. Essa relação é resolvida pela coleção `corridas`.
 
 ```mermaid
 erDiagram
