@@ -5,37 +5,32 @@
   },
   "mappings": {
     "properties": {
-      "prato_id": {
+      "corrida_id": {
         "type": "keyword"
       },
-      "restaurante_id": {
+      "passageiro_id": {
         "type": "keyword"
       },
-      "restaurante_nome": {
+      "motorista_id": {
+        "type": "keyword"
+      },
+      "origem": {
         "type": "text"
       },
-      "nome": {
-        "type": "text",
-        "boost": 3
+      "destino": {
+        "type": "text"
       },
-      "descricao": {
-        "type": "text",
-        "boost": 2
-      },
-      "categoria": {
+      "status": {
         "type": "keyword"
       },
-      "preco": {
+      "valor_estimado": {
         "type": "float"
       },
-      "ingredientes": {
-        "type": "text"
+      "distancia_estimada_km": {
+        "type": "float"
       },
-      "alergenos": {
-        "type": "keyword"
-      },
-      "disponivel": {
-        "type": "boolean"
+      "data_solicitacao": {
+        "type": "date"
       }
     }
   }

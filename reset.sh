@@ -1,18 +1,11 @@
 #!/usr/bin/env bash
-#
-# reset.sh — Reseta todos os volumes e restaura o dataset GastroHub de fábrica
-#
+
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 
-RED='\033[0;31m'
-YELLOW='\033[1;33m'
-GREEN='\033[0;32m'
-NC='\033[0m'
-
-echo -e "${YELLOW}Atenção: Esta ação apagará todos os volumes locais e recriará os bancos do zero.${NC}"
+echo "Esta ação apagará os dados locais e recriará o banco Bora Lá."
 read -p "Deseja continuar? (s/N): " -n 1 -r
 echo ""
 
@@ -21,15 +14,17 @@ if [[ ! $REPLY =~ ^[Ss]$ ]]; then
     exit 0
 fi
 
-echo "Limpando containers e volumes..."
+echo "Removendo containers e volumes..."
+
 if docker info >/dev/null 2>&1; then
     docker compose down -v
-    docker compose up -d
+    docker compose up -d --build
 elif sg docker -c "docker info" >/dev/null 2>&1; then
-    sg docker -c "docker compose down -v && docker compose up -d"
+    sg docker -c "docker compose down -v && docker compose up -d --build"
 else
     sudo docker compose down -v
-    sudo docker compose up -d
+    sudo docker compose up -d --build
 fi
 
-echo -e "${GREEN}Ambiente resetado com sucesso! O banco GastroHub foi restaurado ao estado original.${NC}"
+echo "Ambiente recriado com sucesso."
+echo "O banco 'borala' será preenchido novamente pelo init/mongo-init.js."
