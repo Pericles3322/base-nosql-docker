@@ -17,9 +17,12 @@ services:
       - ./app/src:/app/src
       - ./init:/app/init:ro
     depends_on:
-      - mongo
-      - redis
-      - elasticsearch
+      mongo:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      elasticsearch:
+        condition: service_started
     restart: unless-stopped
 
   # ── MONGODB & MONGO EXPRESS ──────────────────────────────────────────────────
@@ -27,6 +30,25 @@ services:
     image: mongo:7
     container_name: nosql_mongo
     command: ["mongod", "--config", "/etc/mongod.conf"]
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "mongosh",
+          "--username",
+          "root",
+          "--password",
+          "root",
+          "--authenticationDatabase",
+          "admin",
+          "--quiet",
+          "--eval",
+          "db.adminCommand('ping')"
+        ]
+      interval: 3s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
     environment:
       MONGO_INITDB_ROOT_USERNAME: root
       MONGO_INITDB_ROOT_PASSWORD: root
