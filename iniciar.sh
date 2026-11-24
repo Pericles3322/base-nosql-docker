@@ -7,8 +7,8 @@ if ! command -v docker >/dev/null || ! docker info >/dev/null 2>&1; then
     exit 1
 fi
 docker compose version >/dev/null
-echo "Iniciando Bora Lá; aguardando bancos, carga Mongo → Elasticsearch e API..."
-# O CMD da API executa o seed antes de abrir a porta. Sem alterações em volumes Mongo/Redis.
+echo "Iniciando Bora Lá; aguardando bancos, GeoJSON, índices, carga Mongo → Elasticsearch e API..."
+# O CMD da API prepara o GeoJSON e o índice 2dsphere, depois a busca, antes de abrir a porta.
 if ! docker compose up -d --build --remove-orphans --wait --wait-timeout 240; then
     echo "Erro ao iniciar. Verifique conflitos nas portas 3400, 27034, 6334, 9234, 8400–8402 e os logs abaixo. Nenhum processo foi encerrado." >&2
     docker compose logs --tail=40 app elasticsearch
@@ -17,7 +17,7 @@ fi
 # Verificação real, inclusive índice; fetch roda no Node do container, não depende do host.
 docker compose exec -T app node -e 'fetch("http://localhost:3400/api/health").then(async r => { const b = await r.json(); console.log(JSON.stringify(b)); if (r.status !== 200) process.exit(1); }).catch(e => { console.error(e.message); process.exit(1); })'
 cat <<'URLS'
-Bora Lá pronto (índice corridas carregado automaticamente).
+Bora Lá pronto (GeoJSON, índice 2dsphere e busca preparados automaticamente).
 API:             http://localhost:3400
 Health:          http://localhost:3400/api/health
 Corridas:        http://localhost:3400/api/corridas/disponiveis

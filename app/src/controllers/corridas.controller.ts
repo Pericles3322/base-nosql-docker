@@ -1,11 +1,33 @@
 import { Request, Response } from "express";
-import { ObjectId } from "mongodb";
+import { MongoWriteConcernError, ObjectId } from "mongodb";
+import { lerBuscaPorRaio } from "../services/localizacao.js";
 import { Corrida } from "../models/corrida.js";
 import { cacheGet, cacheSet } from "../database/redis.js";
 import { CACHE_TTL, chaveCorrida, sincronizarCorrida, STATUS } from "../services/corridas-indexacao.js";
 import { getCollection } from "../database/mongo.js";
 
 export class CorridasController {
+  static async perto(req: Request, res: Response): Promise<void> {
+    const parametros = lerBuscaPorRaio(req.query);
+    if (!parametros) {
+      res.status(400).json({ erro: "Informe longitude (-180 a 180), latitude (-90 a 90) e raioKm maior que zero e até 30." }); return;
+    }
+    const { longitude, latitude, raioKm } = parametros;
+    try {
+      const dados = await getCollection<Corrida>("corridas").find({
+        status: "aguardando_motorista", motorista_id: null,
+        "origem.localizacao": { $near: {
+          $geometry: { type: "Point", coordinates: [longitude, latitude] },
+          $maxDistance: raioKm * 1000
+        } }
+      }).project({ origem: 1, destino: 1, status: 1, valor_estimado: 1 }).limit(20).toArray();
+      res.json({ total: dados.length, dados });
+    } catch (erro) {
+      console.error("[Geo] Consulta de corridas falhou:", erro);
+      res.status(503).json({ erro: "Não foi possível buscar corridas próximas: MongoDB indisponível ou índice geográfico ausente." });
+    }
+  }
+
   static async detalhe(req: Request, res: Response): Promise<void> {
     if (!ObjectId.isValid(req.params.id)) {
       res.status(400).json({ erro: "ID da corrida inválido." }); return;
@@ -106,7 +128,7 @@ export class CorridasController {
       });
     } catch (erro: any) {
       console.error("[Corridas] Operação falhou:", erro);
-      res.status(503).json({ erro: "Não foi possível concluir a operação no banco." });
+      res.status(503).json({ erro: "MongoDB indisponível. Não foi possível concluir a operação." });
     }
   }
 
@@ -133,7 +155,7 @@ export class CorridasController {
       });
     } catch (erro: any) {
       console.error("[Corridas] Operação falhou:", erro);
-      res.status(503).json({ erro: "Não foi possível concluir a operação no banco." });
+      res.status(503).json({ erro: "MongoDB indisponível. Não foi possível concluir a operação." });
     }
   }
 
@@ -160,7 +182,7 @@ export class CorridasController {
       });
     } catch (erro: any) {
       console.error("[Corridas] Operação falhou:", erro);
-      res.status(503).json({ erro: "Não foi possível concluir a operação no banco." });
+      res.status(503).json({ erro: "MongoDB indisponível. Não foi possível concluir a operação." });
     }
   }
 
@@ -205,7 +227,7 @@ export class CorridasController {
       });
     } catch (erro: any) {
       console.error("[Corridas] Operação falhou:", erro);
-      res.status(503).json({ erro: "Não foi possível concluir a operação no banco." });
+      res.status(503).json({ erro: "MongoDB indisponível. Não foi possível concluir a operação." });
     }
   }
 
@@ -262,7 +284,8 @@ export class CorridasController {
           }
         },
         {
-          returnDocument: "after"
+          returnDocument: "after",
+          writeConcern: { w: "majority", wtimeoutMS: 3000 }
         }
       );
 
@@ -280,8 +303,13 @@ export class CorridasController {
         sincronizacao
       });
     } catch (erro: any) {
+      if (erro instanceof MongoWriteConcernError || erro?.name === "MongoWriteConcernError") {
+        console.error("[Aceite] Confirmação da gravação incerta:", erro);
+        res.status(503).json({ erro: "A confirmação da gravação não foi concluída. A corrida pode ter sido atualizada; consulte o ID antes de tentar novamente." });
+        return;
+      }
       console.error("[Corridas] Operação falhou:", erro);
-      res.status(503).json({ erro: "Não foi possível concluir a operação no banco." });
+      res.status(503).json({ erro: "MongoDB indisponível. Não foi possível concluir a operação." });
     }
   }
 }

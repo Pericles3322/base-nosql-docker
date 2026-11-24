@@ -20,6 +20,10 @@ app.get("/", (req: Request, res: Response) => {
     descricao: "API do sistema de corridas",
     endpoints: {
       health: "GET /api/health",
+      corridas_perto: "GET /api/corridas/perto?longitude=-51.4628&latitude=-25.3907&raioKm=2",
+      localizar_motorista: "POST /api/motoristas/:id/localizacao",
+      motoristas_perto: "GET /api/motoristas/perto?longitude=-51.4628&latitude=-25.3907&raioKm=3",
+      desempenho: "GET /api/desempenho/historico/:passageiroId",
       corridas_disponiveis: "GET /api/corridas/disponiveis",
       historico_passageiro: "GET /api/corridas/passageiro/:id",
       historico_motorista: "GET /api/corridas/motorista/:id",

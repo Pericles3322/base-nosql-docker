@@ -158,3 +158,42 @@ docker compose config --quiet
 ```
 
 Para executar o teste de integração com `curl`, Python 3 e Docker, use uma instância **isolada**: o teste altera e aceita corridas, valida concorrência e pressupõe o seed inicial ainda disponível. Veja o procedimento em `CHECKPOINT_2.md`. Nenhum teste chama reset, remove volumes ou executa `FLUSHALL`.
+
+## Checkpoint 3 — localização, falhas e desempenho
+
+A documentação da atividade está em [CHECKPOINT_3.md](CHECKPOINT_3.md). O início continua sendo `./iniciar.sh`: antes de atender, a API acrescenta GeoJSON às origens que ainda não têm esse campo, usando as coordenadas existentes, e cria o índice `2dsphere`. Esse preparo também funciona em volumes do Checkpoint 2.
+
+| Método | Rota | Uso |
+|---|---|---|
+| GET | `/api/corridas/perto?longitude=-51.4628&latitude=-25.3907&raioKm=2` | Corridas disponíveis, da mais próxima à mais distante |
+| POST | `/api/motoristas/:id/localizacao` | Grava `{ "longitude": -51.4628, "latitude": -25.3907 }` no Redis GEO |
+| GET | `/api/motoristas/perto?longitude=-51.4628&latitude=-25.3907&raioKm=3` | IDs dos motoristas e distâncias em km |
+| GET | `/api/desempenho/historico/:passageiroId` | Dez corridas mais recentes da coleção auxiliar, sem cache |
+
+Os raios devem ser maiores que zero e de até 30 km. As coordenadas seguem a ordem longitude/latitude; o Redis aceita latitudes até ±85.05112878. O aceite usa confirmação explícita `w: "majority"`, mantendo a regra que impede dois aceites para a mesma corrida. O ambiente é MongoDB standalone, sem garantia de redundância por réplicas.
+
+Para gerar a carga e comparar o índice, com o ambiente iniciado:
+
+```bash
+docker compose exec -T app npm run seed:carga
+docker compose exec -T app npm run indice:carga -- remover
+docker compose exec -T app npm run benchmark
+docker compose exec -T app npm run indice:carga -- criar
+docker compose exec -T app npm run benchmark
+```
+
+O seed cria 30.000 documentos somente em `corridas_carga` e informa o passageiro usado. Os scripts de índice e benchmark escolhem esse passageiro automaticamente; também aceitam `PASSAGEIRO_TESTE_ID`. O benchmark usa 1.000 requisições e dez simultâneas, com `fetch` do Node, e mostra vazão e p95. Os dados de carga não entram no Elasticsearch nem nas rotas das corridas reais.
+
+Para testar quedas de bancos, use o roteiro do `CHECKPOINT_3.md`: Redis fora mantém a leitura via MongoDB; Elasticsearch fora retorna `503` claro; MongoDB fora retorna `503` nas leituras dependentes dele. Os testes automatizados de parada/retomada exigem um projeto isolado, identificado por `borala_cp3_*`, para não interromper a instalação pessoal.
+
+Se a rede bridge padrão do Docker não conseguir acessar o registro npm durante o build, é possível selecionar outra rede sem mudar a rede dos serviços:
+
+```bash
+BORALA_BUILD_NETWORK=host ./iniciar.sh
+```
+
+Essa opção foi necessária na máquina usada para a validação do Checkpoint 3. O padrão continua sendo a rede de build `default`. Para repetir toda a validação em um ambiente isolado:
+
+```bash
+BORALA_BUILD_NETWORK=host ./scripts/validar-checkpoint-3.sh
+```

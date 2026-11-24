@@ -22,7 +22,7 @@ export async function buscarCorridas(req: Request, res: Response): Promise<void>
         must: [{ multi_match: { query: q.trim(), fields: ["origem^3", "destino^2"], fuzziness: "AUTO" } }],
         filter: status ? [{ term: { status } }] : []
       } }
-    });
+    }, { requestTimeout: 2000, maxRetries: 0 });
     let historico = "NAO_SOLICITADO";
     if (typeof passageiroId === "string") {
       try {
@@ -40,6 +40,6 @@ export async function buscarCorridas(req: Request, res: Response): Promise<void>
         status: hit._source?.status, valor_estimado: hit._source?.valor_estimado })) });
   } catch (erro) {
     console.error("[Busca] Elasticsearch indisponível:", erro);
-    res.status(503).json({ erro: "Busca temporariamente indisponível." });
+    res.status(503).json({ erro: "Busca temporariamente indisponível: Elasticsearch fora do ar." });
   }
 }

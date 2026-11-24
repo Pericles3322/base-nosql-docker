@@ -3,6 +3,7 @@ import { CorridasController } from "../controllers/corridas.controller.js";
 
 const router = Router();
 
+router.get("/perto", CorridasController.perto);
 router.get("/disponiveis", CorridasController.listarDisponiveis);
 router.get("/passageiro/:id", CorridasController.historicoPassageiro);
 router.get("/motorista/:id", CorridasController.historicoMotorista);

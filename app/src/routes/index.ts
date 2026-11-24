@@ -1,3 +1,5 @@
+import motoristasRoutes from "./motoristas.routes.js";
+import desempenhoRoutes from "./desempenho.routes.js";
 import buscaRoutes from "./busca.routes.js";
 import redisRoutes from "./redis.routes.js";
 import sincronizacaoRoutes from "./sincronizacao.routes.js";
@@ -76,5 +78,8 @@ routes.use("/corridas", corridasRoutes);
 routes.use("/busca", buscaRoutes);
 routes.use("/redis", redisRoutes);
 routes.use("/sincronizacao", sincronizacaoRoutes);
+
+routes.use("/motoristas", motoristasRoutes);
+routes.use("/desempenho", desempenhoRoutes);
 
 export default routes;

@@ -4,7 +4,7 @@ WORKDIR /app
 
 # Instala dependências
 COPY package*.json ./
-RUN npm ci
+RUN npm ci --no-audit --no-fund
 
 # Copia o código fonte
 COPY tsconfig.json ./
@@ -15,4 +15,4 @@ RUN npm run build
 EXPOSE 3400
 
 # Prepara a cópia de busca antes de atender; executa o JavaScript compilado.
-CMD ["sh", "-c", "npm run seed:elastic && exec npm start"]
+CMD ["sh", "-c", "npm run seed:geo && npm run seed:elastic && exec npm start"]

@@ -4,6 +4,7 @@ services:
     build:
       context: ./app
       dockerfile: Dockerfile
+      network: ${BORALA_BUILD_NETWORK:-default}
     container_name: nosql_app
     ports:
       - "3400:3400"
